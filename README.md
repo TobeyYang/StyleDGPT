@@ -10,7 +10,7 @@ pip install -r requirments.txt
 
 ## Resources
 
-### Data
+### 1. Data
 First, you need to prepare the data following the pipeline in this prior [work](https://github.com/golsun/StyleFusion). 
 Of course, you can test our model on your custom corpora. The data format of the non-stylized dialogue corpus is TSV. 
 It contains one piece of data per line, and the context and response is delimited by `\t`. 
@@ -25,7 +25,7 @@ what 's your biggest flaw ?     i 'm too trusting of people .
 ```
 The stylized corpus should also be in the format of TSV that each utterance on its own line.
 
-### Models
+### 2. Models
 GPT2-small and DialoGPT-medium are the backbone networks of our approach. You can download them using the script `download_resources.py`.
 ```
 python download_resources.py --resource models.dialogpt-medium --output models/medium
@@ -70,7 +70,7 @@ python style_discriminator/train_style_dis.py
         --model_name_or_path models/small 
         --output_dir /direcotry/to/dump/models
 ```
-After training, you can use the script [style_discriminator/eval_style_dis.py](https://github.com/TobeyYang/StyleDGPT/blob/main/style_discriminaotr/eval_style_dis.py)
+After training, you can use the script `style_discriminator/eval_style_dis.py`.
 * to score input sentences interactively. 
 ```
 python style_discriminator/eval_style_dis.py --mode interact --model_name_or_path models/small --sty_dic_model_fi /path/to/dumped/model
