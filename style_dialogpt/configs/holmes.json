@@ -1,0 +1,12 @@
+{
+  "model_name_or_path":"models/medium",
+  "train_input_file": "data/reddit/train_holmes.tsv",
+  "eval_input_file": "data/reddit/eval_holmes.tsv",
+  "pbar": true,
+  "init_checkpoint": "models/medium/medium_ft.pkl",
+  "sty_lm_model_name_or_path": "models/lm_holmes_small/checkpoint-47000",
+  "sty_dic_model_fi": "models/dis_holmes_small/classifier_head_epoch_5.pt",
+  "fp16": false,
+  "train_batch_size": 10,
+  "eval_batch_size": 4
+}
