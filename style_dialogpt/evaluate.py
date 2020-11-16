@@ -6,9 +6,11 @@ import logging
 import numpy as np
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import os
+import os, sys
 
-sys.path.append(os.path.dirname(__file__))
+proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(proj_root)
+sys.path.append(os.path.join(proj_root, "models"))
 from data_loader import GPT2Dataset, BucketBatchSampler
 from utils import load_model, boolean_string
 from models import Discriminator

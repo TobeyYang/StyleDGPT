@@ -4,13 +4,9 @@ import torch.nn.functional as F
 from transformers import GPT2Tokenizer
 import os
 
-try:
-    from src.style_discriminator.modeling_gpt2 import GPT2LMHeadModel
-except:
-    from modeling_gpt2 import GPT2LMHeadModel
-
 EPSILON = 1e-10
 
+from .modeling_gpt2 import GPT2LMHeadModel
 
 class ClassificationHead(torch.nn.Module):
     """Classification Head for transformer encoders"""
@@ -19,13 +15,9 @@ class ClassificationHead(torch.nn.Module):
         super(ClassificationHead, self).__init__()
         self.class_size = class_size
         self.embed_size = embed_size
-        # self.mlp1 = torch.nn.Linear(embed_size, embed_size)
-        # self.mlp2 = (torch.nn.Linear(embed_size, class_size))
         self.mlp = torch.nn.Linear(embed_size, class_size)
 
     def forward(self, hidden_state):
-        # hidden_state = F.relu(self.mlp1(hidden_state))
-        # hidden_state = self.mlp2(hidden_state)
         logits = self.mlp(hidden_state)
         return logits
 
@@ -50,7 +42,6 @@ class Discriminator(torch.nn.Module):
         if encoder:
             self.encoder = encoder
         else:
-            # state_dict = torch.load(os.path.join(model_name_or_path, 'pytorch_model.bin'))
             self.encoder = GPT2LMHeadModel.from_pretrained(model_name_or_path).transformer
 
         self.embed_size = self.encoder.config.hidden_size
@@ -70,7 +61,7 @@ class Discriminator(torch.nn.Module):
             param.requires_grad = False
         self.classifier_head.train()
 
-    def avg_representation(self, x):
+    def avg_representation(self, x=None, inputs_embeds=None):
         '''
 
         Args:
@@ -79,21 +70,31 @@ class Discriminator(torch.nn.Module):
             avg_hidden: B x embed_size
 
         '''
-        mask = x.ne(0).unsqueeze(2).repeat(1, 1, self.embed_size).float().to(self.device).detach()
-        # hidden, _ = self.encoder.transformer(x)
-        hidden, _ = self.encoder(x)
-        masked_hidden = hidden * mask
-        avg_hidden = torch.sum(masked_hidden, dim=1) / (torch.sum(mask, dim=1).detach() + EPSILON)
+        if inputs_embeds is None:
+            mask = x.ne(0).unsqueeze(2).repeat(1, 1, self.embed_size).float().to(self.device).detach()
+            # hidden, _ = self.encoder.transformer(x)
+            hidden, _ = self.encoder(x)
+            masked_hidden = hidden * mask
+            avg_hidden = torch.sum(masked_hidden, dim=1) / (torch.sum(mask, dim=1).detach() + EPSILON)
+        else:
+            hidden,_  = self.encoder(inputs_embeds=inputs_embeds)
+            avg_hidden = torch.mean(hidden, dim=1)
         return avg_hidden
 
-    def forward(self, x):
+    def forward(self, x=None, inputs_embeds=None):
+        if x is not None:
+            x= x.to(self.device)
+        if inputs_embeds is not None:
+            inputs_embeds = inputs_embeds.to(self.device)
+
         if self.cached_mode:
-            avg_hidden = x.to(self.device)
+            avg_hidden = x
         else:
-            avg_hidden = self.avg_representation(x.to(self.device))
+            avg_hidden = self.avg_representation(x, inputs_embeds)
 
         logits = self.classifier_head(avg_hidden)
-        probs = F.log_softmax(logits, dim=-1)
+        probs = F.log_softmax(logits, dim=1)
+        # probs = logits
 
         return probs
 
@@ -112,7 +113,7 @@ class Discriminator(torch.nn.Module):
             model = cls(
                 class_size=meta['class_size'],
                 encoder=encoder,
-                tokenizer=1,    # To fast load.
+                tokenizer=1,    # trick to accelerate loading
                 device=device
             )
 

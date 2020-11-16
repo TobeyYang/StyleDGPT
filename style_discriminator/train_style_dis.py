@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 # coding=utf-8
 
 # This code is licensed under a non-commercial license.
@@ -8,7 +7,7 @@ import csv
 import json
 import math
 import time
-import os
+import os,sys
 
 import numpy as np
 import torch
@@ -16,12 +15,15 @@ import torch.nn.functional as F
 import torch.optim
 import torch.optim as optim
 import torch.utils.data as data
-from nltk.tokenize.treebank import TreebankWordDetokenizer
-from torchtext import data as torchtext_data
-from torchtext import datasets
+# from nltk.tokenize.treebank import TreebankWordDetokenizer
+# from torchtext import data as torchtext_data
+# from torchtext import datasets
 from tqdm import tqdm, trange
 
 # from modeling_discriminator import Discriminator
+proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(proj_root)
+sys.path.append(os.path.join(proj_root, "models"))
 from models import Discriminator
 
 torch.manual_seed(0)

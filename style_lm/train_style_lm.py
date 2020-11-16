@@ -1,28 +1,12 @@
 # coding=utf-8
-# Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """
-Fine-tuning the library models for language modeling on a text file (GPT, GPT-2, BERT, RoBERTa).
-GPT and GPT-2 are fine-tuned using a causal language modeling (CLM) loss while BERT and RoBERTa are fine-tuned
-using a masked language modeling (MLM) loss.
+This script is inherited from the run_language_modeling.py from transformers.
 """
 
 import argparse
 import glob
 import logging
-import os
+import os,sys
 import pickle
 import random
 import re
@@ -38,10 +22,10 @@ from tqdm import tqdm, trange
 
 from transformers import GPT2Tokenizer, GPT2Config, AdamW, get_linear_schedule_with_warmup
 
-try:
-    from models.modeling_gpt2 import GPT2LMHeadModel
-except:
-    from models import GPT2LMHeadModel
+proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(proj_root)
+sys.path.append(os.path.join(proj_root, "models"))
+from models import GPT2LMHeadModel
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -290,7 +274,8 @@ def train(args, train_dataset, model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer)
                 model.zero_grad()
                 global_step += 1
 
-                logger.info(f'the wte: {model.transformer.wte.weight[0][0]}')
+                # check the parameters of GPT-2 are fixed, but the lm_head is optimizing.
+                logger.info(f'the wte: {model.transformer.wte.weight[0][0]}, the head: {model.lm_head.weight[0][0]}')
 
                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     # Log metrics
@@ -369,7 +354,6 @@ def evaluate(args, model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, prefix="") 
     logger.info("  Batch size = %d", args.eval_batch_size)
     eval_loss = 0.0
     nb_eval_steps = 0
-    ppl = 0
     model.eval()
 
     for batch in tqdm(eval_dataloader, desc="Evaluating", disable='PT_DATA_DIR' in os.environ.keys()):
@@ -381,14 +365,11 @@ def evaluate(args, model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, prefix="") 
             outputs = model(inputs, labels=labels)
             lm_loss = outputs[0]
             eval_loss += lm_loss.mean().item()
-            ppl += outputs[1].item()
         nb_eval_steps += 1
 
     eval_loss = eval_loss / nb_eval_steps
     perplexity = torch.exp(torch.tensor(eval_loss))
-    ppl2 = ppl / nb_eval_steps
     result = {"perplexity1": perplexity}
-    result["perplexity2"] = ppl2
 
     output_eval_file = os.path.join(eval_output_dir, prefix, "eval_results.txt")
     with open(output_eval_file, "w") as writer:

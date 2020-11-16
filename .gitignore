@@ -3,7 +3,7 @@ syntactic_analysis
 style_dialogpt/generate.py
 style_dialogpt/metrics/dictionary.txt
 style_dialogpt/metrics/emb_evaluate.py
-
+debug
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

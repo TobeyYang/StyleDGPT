@@ -1,18 +1,6 @@
 # coding=utf-8
-# Copyright 2018 The OpenAI Team Authors and HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# This file is inherited from the official DialoGPT repo.
+# Note that the embedding matrix and lm_head are untied.
 """PyTorch OpenAI GPT-2 model."""
 
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -33,8 +21,8 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
         self.transformer = GPT2Model(config)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
-        # self.init_weights()   # do not tie!
-        # self.apply(self._init_weights)
+        self.init_weights()
+        self.apply(self._init_weights)
 
     def get_output_embeddings(self):
         return self.lm_head
@@ -47,7 +35,7 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
         return {"input_ids": input_ids, "past": past}
 
     def tie_weights(self):
-        pass
+        pass    # do not tie!
 
     def forward(
             self,
@@ -82,11 +70,10 @@ class GPT2LMHeadModel(GPT2PreTrainedModel):
             lm_logits = lm_logits[..., :-1, :].contiguous()
             labels = labels[..., 1:].contiguous()
 
-            loss1 = loss_fct1(lm_logits.view(-1, lm_logits.size(-1)),
-                              labels.view(-1))
+            loss1 = loss_fct1(lm_logits.view(-1, lm_logits.size(-1)), labels.view(-1))
             loss1 = loss1.view(labels.size(0), labels.size(1))
-            label_size = torch.sum(labels != -1, dim=1).float()
-            ppl = torch.exp(torch.mean(torch.sum(loss1, dim=1) / label_size))
+            label_size = torch.sum(labels != -1, dim=1).type(loss1.type())
+            ppl = torch.exp(torch.mean(torch.sum(loss1, dim=1).float() / label_size.float()))
 
             if element_weights is not None:
                 if element_weights.dim() == 1:

@@ -23,11 +23,11 @@ from torch.distributed import get_rank, get_world_size
 import torch.nn.functional as F
 from transformers import GPT2Tokenizer, GPT2Config, AdamW, get_linear_schedule_with_warmup
 
-
-
+proj_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(proj_root)
+sys.path.append(os.path.join(proj_root, "models"))
 from models import GPT2LMHeadModel, Discriminator
 
-sys.path.append(os.path.dirname(__file__))
 from utils import load_model, boolean_string, all_reduce_and_rescale_tensors
 from data_loader import BucketDataLoader
 from losses import compute_kl
